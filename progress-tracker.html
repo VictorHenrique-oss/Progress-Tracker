@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Tracker 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #131316;
+    --surface2: #1a1a1f;
+    --border: #2a2a32;
+    --accent: #c8ff3e;
+    --accent2: #3eceff;
+    --accent3: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #666680;
+    --study: #3eceff;
+    --work: #ff6b35;
+    --personal: #b57bff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 80% 10%, rgba(200,255,62,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 50% at 10% 90%, rgba(62,206,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+
+  header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 40px; gap: 16px; flex-wrap: wrap;
+  }
+
+  .header-left h1 {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .header-left h1 span { color: var(--accent); }
+
+  .header-left p {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    margin-top: 6px; letter-spacing: 0.5px;
+  }
+
+  .date-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    text-align: right; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* WEEK STRIP */
+  .week-strip {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 6px; margin-bottom: 32px;
+  }
+
+  .day-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .day-pill::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: var(--fill, 0%);
+    background: linear-gradient(to top, rgba(200,255,62,0.15), transparent);
+    transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .day-pill.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(200,255,62,0.15);
+  }
+
+  .day-pill .day-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    position: relative; z-index: 1;
+  }
+
+  .day-pill.active .day-label { color: var(--accent); }
+
+  .day-pill .day-pct {
+    font-size: 15px; font-weight: 800;
+    margin-top: 4px; position: relative; z-index: 1;
+  }
+
+  .day-pill.active .day-pct { color: var(--accent); }
+
+  .day-pill .day-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--border);
+    margin: 5px auto 0;
+    position: relative; z-index: 1;
+  }
+
+  .day-pill.active .day-dot { background: var(--accent); }
+
+  /* WEEKLY PROGRESS */
+  .weekly-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+
+  .weekly-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  .card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 24px; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+
+  .bar-track {
+    background: var(--surface2);
+    border-radius: 100px; height: 10px;
+    overflow: hidden; position: relative;
+  }
+
+  .bar-fill {
+    height: 100%; border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+  }
+
+  .bar-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    background: inherit;
+    box-shadow: 0 0 12px currentColor;
+  }
+
+  .bar-weekly .bar-fill { background: linear-gradient(90deg, var(--accent), #e8ff80); }
+
+  .bar-stats {
+    display: flex; justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .bar-stats span {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--muted);
+  }
+
+  /* DAILY SECTION */
+  .daily-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .daily-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .daily-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  .daily-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--accent);
+  }
+
+  .categories { display: flex; flex-direction: column; gap: 14px; }
+
+  .cat-row { display: flex; align-items: center; gap: 12px; }
+
+  .cat-label {
+    width: 70px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.8px; text-transform: uppercase; flex-shrink: 0;
+  }
+
+  .cat-label.study { color: var(--study); }
+  .cat-label.work { color: var(--work); }
+  .cat-label.personal { color: var(--personal); }
+
+  .cat-bar { flex: 1; background: var(--surface2); border-radius: 100px; height: 8px; overflow: hidden; }
+
+  .cat-fill {
+    height: 100%; border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .cat-fill.study { background: linear-gradient(90deg, var(--study), #80e8ff); }
+  .cat-fill.work { background: linear-gradient(90deg, var(--work), #ffaa80); }
+  .cat-fill.personal { background: linear-gradient(90deg, var(--personal), #d4aaff); }
+
+  .cat-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    width: 32px; text-align: right; flex-shrink: 0;
+  }
+
+  /* TASKS */
+  .tasks-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .tasks-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .tasks-title {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+  }
+
+  .add-btn {
+    background: var(--accent);
+    border: none; border-radius: 8px;
+    color: var(--bg); font-family: 'Space Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 6px 12px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.5px;
+  }
+
+  .add-btn:hover { background: #d8ff5e; transform: translateY(-1px); }
+
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .task-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .task-item:hover { border-color: var(--border); background: #1e1e25; }
+
+  .task-item.done { opacity: 0.5; }
+
+  .task-check {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+  }
+
+  .task-item.done .task-check {
+    background: var(--accent); border-color: var(--accent);
+  }
+
+  .task-check svg { display: none; }
+  .task-item.done .task-check svg { display: block; }
+
+  .task-name {
+    flex: 1; font-size: 13px; font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .task-item.done .task-name {
+    text-decoration: line-through; color: var(--muted);
+  }
+
+  .task-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; padding: 3px 7px;
+    border-radius: 100px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+
+  .task-tag.study { background: rgba(62,206,255,0.12); color: var(--study); }
+  .task-tag.work { background: rgba(255,107,53,0.12); color: var(--work); }
+  .task-tag.personal { background: rgba(181,123,255,0.12); color: var(--personal); }
+
+  .task-del {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 16px; padding: 0 4px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+
+  .task-item:hover .task-del { opacity: 1; }
+
+  /* ADD FORM */
+  .add-form {
+    display: none; flex-direction: column; gap: 10px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+
+  .add-form.visible { display: flex; }
+
+  .form-row { display: flex; gap: 10px; }
+
+  .form-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus { border-color: var(--accent); }
+
+  .form-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 8px 10px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .btn-confirm {
+    background: var(--accent); border: none;
+    border-radius: 8px; color: var(--bg);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 7px 16px; cursor: pointer;
+  }
+
+  .btn-cancel {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; padding: 7px 16px; cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center; padding: 24px;
+    color: var(--muted); font-size: 12px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    margin-top: 8px; letter-spacing: 0.5px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .container > * {
+    animation: fadeIn 0.4s ease both;
+  }
+
+  .container > *:nth-child(1) { animation-delay: 0.0s; }
+  .container > *:nth-child(2) { animation-delay: 0.08s; }
+  .container > *:nth-child(3) { animation-delay: 0.14s; }
+  .container > *:nth-child(4) { animation-delay: 0.20s; }
+  .container > *:nth-child(5) { animation-delay: 0.26s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <h1>Progress <span>Tracker</span></h1>
+      <p id="weekLabel">Carregando semana...</p>
+    </div>
+    <div class="date-display" id="headerDate"></div>
+  </header>
+
+  <!-- WEEK STRIP -->
+  <div class="week-strip" id="weekStrip"></div>
+
+  <!-- WEEKLY BAR -->
+  <div class="weekly-card">
+    <div class="card-header">
+      <span class="card-title">Progresso Semanal</span>
+      <span class="card-value" id="weeklyPct">0%</span>
+    </div>
+    <div class="bar-track bar-weekly">
+      <div class="bar-fill" id="weeklyBar" style="width:0%"></div>
+    </div>
+    <div class="bar-stats">
+      <span id="weeklyDone">0 tarefas concluídas</span>
+      <span id="weeklyTotal">0 total</span>
+    </div>
+  </div>
+
+  <!-- DAILY BY CATEGORY -->
+  <div class="daily-card">
+    <div class="daily-header">
+      <span class="daily-title">Hoje por Categoria</span>
+      <span class="daily-date" id="todayLabel"></span>
+    </div>
+    <div class="categories">
+      <div class="cat-row">
+        <span class="cat-label study">Study</span>
+        <div class="cat-bar"><div class="cat-fill study" id="barStudy" style="width:0%"></div></div>
+        <span class="cat-pct" id="pctStudy">—</span>
+      </div>
+      <div class="cat-row">
+        <span class="cat-label work">Work</span>
+        <div class="cat-bar"><div class="cat-fill work" id="barWork" style="width:0%"></div></div>
+        <span class="cat-pct" id="pctWork">—</span>
+      </div>
+      <div class="cat-row">
+        <span class="cat-label personal">Personal</span>
+        <div class="cat-bar"><div class="cat-fill personal" id="barPersonal" style="width:0%"></div></div>
+        <span class="cat-pct" id="pctPersonal">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="tasks-card">
+    <div class="tasks-header">
+      <span class="tasks-title">Tarefas do Dia</span>
+      <button class="add-btn" onclick="toggleForm()">+ Adicionar</button>
+    </div>
+
+    <div id="addForm" class="add-form">
+      <input class="form-input" id="taskName" placeholder="Nome da tarefa..." />
+      <div class="form-row">
+        <select class="form-select" id="taskCat">
+          <option value="work">Work</option>
+          <option value="study">Study</option>
+          <option value="personal">Personal</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" onclick="toggleForm()">Cancelar</button>
+        <button class="btn-confirm" onclick="addTask()">Salvar</button>
+      </div>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+  </div>
+
+  <p class="footer-note">Os dados são salvos localmente no navegador · Atualiza automaticamente</p>
+
+</div>
+
+<script>
+  // --- Helpers ---
+  const dateKey = (d) => d.toISOString().slice(0, 10);
+
+  const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  function getWeekDays(ref) {
+    const d = new Date(ref);
+    const day = d.getDay(); // 0=Sun
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - ((day + 6) % 7)); // Monday
+    return Array.from({length: 7}, (_, i) => {
+      const nd = new Date(mon);
+      nd.setDate(mon.getDate() + i);
+      return nd;
+    });
+  }
+
+  // --- Storage ---
+  function loadData() {
+    try { return JSON.parse(localStorage.getItem('pt_data') || '{}'); } catch { return {}; }
+  }
+
+  function saveData(data) {
+    localStorage.setItem('pt_data', JSON.stringify(data));
+  }
+
+  function getDay(data, key) {
+    if (!data[key]) data[key] = { tasks: [] };
+    return data[key];
+  }
+
+  // --- State ---
+  let data = loadData();
+  const today = new Date();
+  let selectedDate = today;
+
+  // --- Render ---
+  function render() {
+    const todayKey = dateKey(today);
+    const selKey = dateKey(selectedDate);
+    const week = getWeekDays(today);
+
+    // Header
+    document.getElementById('headerDate').innerHTML =
+      `${DAYS_PT[today.getDay()]}, ${today.getDate()} ${MONTHS_PT[today.getMonth()]} 2026`;
+
+    const weekStart = week[0];
+    const weekEnd = week[6];
+    document.getElementById('weekLabel').textContent =
+      `Semana ${weekStart.getDate()}/${weekStart.getMonth()+1} – ${weekEnd.getDate()}/${weekEnd.getMonth()+1}`;
+
+    // Today label
+    document.getElementById('todayLabel').textContent =
+      selKey === todayKey ? 'Hoje' :
+      `${DAYS_PT[selectedDate.getDay()]}, ${selectedDate.getDate()}/${selectedDate.getMonth()+1}`;
+
+    // Week strip
+    const strip = document.getElementById('weekStrip');
+    strip.innerHTML = '';
+    let weekDone = 0, weekTotal = 0;
+
+    week.forEach(d => {
+      const k = dateKey(d);
+      const dayData = data[k] || { tasks: [] };
+      const tasks = dayData.tasks || [];
+      const done = tasks.filter(t => t.done).length;
+      const total = tasks.length;
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+      weekDone += done;
+      weekTotal += total;
+
+      const pill = document.createElement('div');
+      pill.className = 'day-pill' + (k === dateKey(selectedDate) ? ' active' : '');
+      pill.style.setProperty('--fill', pct + '%');
+      pill.innerHTML = `
+        <div class="day-label">${DAYS_PT[d.getDay()]}</div>
+        <div class="day-pct">${total > 0 ? pct + '%' : '·'}</div>
+        <div class="day-dot"></div>
+      `;
+      pill.onclick = () => { selectedDate = d; render(); };
+      strip.appendChild(pill);
+    });
+
+    // Weekly bar
+    const weekPct = weekTotal > 0 ? Math.round(weekDone / weekTotal * 100) : 0;
+    document.getElementById('weeklyPct').textContent = weekPct + '%';
+    document.getElementById('weeklyBar').style.width = weekPct + '%';
+    document.getElementById('weeklyDone').textContent = `${weekDone} concluídas`;
+    document.getElementById('weeklyTotal').textContent = `${weekTotal} total`;
+
+    // Daily categories
+    const selDay = data[selKey] || { tasks: [] };
+    const selTasks = selDay.tasks || [];
+
+    const cats = { study: { done: 0, total: 0 }, work: { done: 0, total: 0 }, personal: { done: 0, total: 0 } };
+    selTasks.forEach(t => {
+      const c = t.cat || 'personal';
+      if (cats[c]) { cats[c].total++; if (t.done) cats[c].done++; }
+    });
+
+    ['study','work','personal'].forEach(c => {
+      const {done, total} = cats[c];
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      document.getElementById('bar' + c.charAt(0).toUpperCase() + c.slice(1)).style.width = (total > 0 ? pct : 0) + '%';
+      document.getElementById('pct' + c.charAt(0).toUpperCase() + c.slice(1)).textContent = total > 0 ? pct + '%' : '—';
+    });
+
+    // Task list
+    const list = document.getElementById('taskList');
+    list.innerHTML = '';
+
+    if (selTasks.length === 0) {
+      list.innerHTML = '<div class="empty-state">Nenhuma tarefa para este dia.<br>Clique em "+ Adicionar" para começar.</div>';
+    } else {
+      selTasks.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'task-item' + (t.done ? ' done' : '');
+        item.innerHTML = `
+          <div class="task-check">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="#0d0d0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="task-name">${t.name}</span>
+          <span class="task-tag ${t.cat}">${t.cat}</span>
+          <button class="task-del" onclick="deleteTask(event, '${selKey}', ${i})">×</button>
+        `;
+        item.querySelector('.task-check').onclick = () => toggleTask(selKey, i);
+        item.querySelector('.task-name').onclick = () => toggleTask(selKey, i);
+        list.appendChild(item);
+      });
+    }
+  }
+
+  function toggleTask(key, idx) {
+    if (!data[key]) data[key] = { tasks: [] };
+    data[key].tasks[idx].done = !data[key].tasks[idx].done;
+    saveData(data);
+    render();
+  }
+
+  function deleteTask(e, key, idx) {
+    e.stopPropagation();
+    data[key].tasks.splice(idx, 1);
+    saveData(data);
+    render();
+  }
+
+  function toggleForm() {
+    const f = document.getElementById('addForm');
+    f.classList.toggle('visible');
+    if (f.classList.contains('visible')) document.getElementById('taskName').focus();
+  }
+
+  function addTask() {
+    const name = document.getElementById('taskName').value.trim();
+    if (!name) return;
+    const cat = document.getElementById('taskCat').value;
+    const key = dateKey(selectedDate);
+    if (!data[key]) data[key] = { tasks: [] };
+    data[key].tasks.push({ name, cat, done: false });
+    saveData(data);
+    document.getElementById('taskName').value = '';
+    document.getElementById('addForm').classList.remove('visible');
+    render();
+  }
+
+  document.getElementById('taskName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+    if (e.key === 'Escape') toggleForm();
+  });
+
+  render();
+</script>
+</body>
+</html>
